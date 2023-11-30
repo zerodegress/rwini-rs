@@ -1,6 +1,6 @@
 [package]
 name = "rwini"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "A lib for parsing Rusted Warfare ini in Rust."
 license = "GPL-3.0-or-later"
