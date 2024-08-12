@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 use std::{
-  collections::HashMap,
   ops::Index, mem::swap,
 };
+use indexmap::IndexMap;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Default)]
 pub struct Ini {
-  pub sections: HashMap<String, HashMap<String, String>>,
+  pub sections: IndexMap<String, IndexMap<String, String>>,
 }
 
 impl Ini {
@@ -50,7 +50,7 @@ impl ToString for Ini {
 impl<const N: usize> From<[IniSection; N]> for Ini {
   fn from(value: [IniSection; N]) -> Self {
     Self {
-      sections: HashMap::from_iter(
+      sections: IndexMap::from_iter(
         value.into_iter()
           .map(|sec| (sec.name, sec.properties))
       )
@@ -61,14 +61,14 @@ impl<const N: usize> From<[IniSection; N]> for Ini {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct IniSection {
   name: String,
-  properties: HashMap<String, String>,
+  properties: IndexMap<String, String>,
 }
 
 impl IniSection {
   pub fn new(name: String) -> Self {
     Self {
       name,
-      properties: HashMap::default(),
+      properties: IndexMap::default(),
     }
   }
 
@@ -119,13 +119,13 @@ impl<const N: usize> From<(&str, [(&str, &str); N])> for IniSection {
   fn from(value: (&str, [(&str, &str); N])) -> Self {
     Self {
       name: value.0.to_owned(),
-      properties: HashMap::from_iter(value.1.into_iter().map(|(k, v)| (k.to_owned(), v.to_owned()))),
+      properties: IndexMap::from_iter(value.1.into_iter().map(|(k, v)| (k.to_owned(), v.to_owned()))),
     }
   }
 }
 
-impl From<(String, HashMap<String, String>)> for IniSection {
-  fn from(value: (String, HashMap<String, String>)) -> Self {
+impl From<(String, IndexMap<String, String>)> for IniSection {
+  fn from(value: (String, IndexMap<String, String>)) -> Self {
     IniSection { 
       name: value.0, 
       properties: value.1,
@@ -133,8 +133,8 @@ impl From<(String, HashMap<String, String>)> for IniSection {
   }
 }
 
-impl Into<(String, HashMap<String, String>)> for IniSection {
-  fn into(self) -> (String, HashMap<String, String>) {
+impl Into<(String, IndexMap<String, String>)> for IniSection {
+  fn into(self) -> (String, IndexMap<String, String>) {
     (
       self.name,
       self.properties,
