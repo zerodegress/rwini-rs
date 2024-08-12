@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 use std::{
-  ops::Index, mem::swap,
+  collections::BTreeMap,
+  fmt::Display, mem::swap, ops::Index
 };
-use indexmap::IndexMap;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Default)]
 pub struct Ini {
-  pub sections: IndexMap<String, IndexMap<String, String>>,
+  pub sections: BTreeMap<String, BTreeMap<String, String>>,
 }
 
 impl Ini {
@@ -23,34 +23,31 @@ impl Ini {
   }
 }
 
-impl ToString for Ini {
-  fn to_string(&self) -> String {
-    format!(
-      "{}",
-      self
-        .sections
-        .iter()
-        .map(
-          |(name, props)| 
-            format!(
-              "[{}]\n{}", 
-              name, 
-              props.iter()
-                .map(|(k, v)| format!("{}:{}", k, v))
-                  .collect::<Vec<_>>()
-                  .join("\n"),
-            )
-        )
-        .collect::<Vec<_>>()
-        .join("\n")
-    )
+impl Display for Ini {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      write!(f, "{}", self
+      .sections
+      .iter()
+      .map(
+        |(name, props)| 
+          format!(
+            "[{}]\n{}", 
+            name, 
+            props.iter()
+              .map(|(k, v)| format!("{}:{}", k, v))
+                .collect::<Vec<_>>()
+                .join("\n"),
+          )
+      )
+      .collect::<Vec<_>>()
+      .join("\n"))
   }
 }
 
 impl<const N: usize> From<[IniSection; N]> for Ini {
   fn from(value: [IniSection; N]) -> Self {
     Self {
-      sections: IndexMap::from_iter(
+      sections: BTreeMap::from_iter(
         value.into_iter()
           .map(|sec| (sec.name, sec.properties))
       )
@@ -61,14 +58,14 @@ impl<const N: usize> From<[IniSection; N]> for Ini {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct IniSection {
   name: String,
-  properties: IndexMap<String, String>,
+  properties: BTreeMap<String, String>,
 }
 
 impl IniSection {
   pub fn new(name: String) -> Self {
     Self {
       name,
-      properties: IndexMap::default(),
+      properties: BTreeMap::default(),
     }
   }
 
@@ -100,18 +97,15 @@ impl IniSection {
   }
 }
 
-impl ToString for IniSection {
-  fn to_string(&self) -> String {
-    format!(
-      "[{}]\n{}",
-      self.name,
+impl Display for IniSection {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      write!(f, "[{}]\n{}", self.name,
       self
         .properties
         .values()
         .map(|x| x.to_string())
         .collect::<Vec<_>>()
-        .join("\n")
-    )
+        .join("\n"))
   }
 }
 
@@ -119,13 +113,13 @@ impl<const N: usize> From<(&str, [(&str, &str); N])> for IniSection {
   fn from(value: (&str, [(&str, &str); N])) -> Self {
     Self {
       name: value.0.to_owned(),
-      properties: IndexMap::from_iter(value.1.into_iter().map(|(k, v)| (k.to_owned(), v.to_owned()))),
+      properties: BTreeMap::from_iter(value.1.into_iter().map(|(k, v)| (k.to_owned(), v.to_owned()))),
     }
   }
 }
 
-impl From<(String, IndexMap<String, String>)> for IniSection {
-  fn from(value: (String, IndexMap<String, String>)) -> Self {
+impl From<(String, BTreeMap<String, String>)> for IniSection {
+  fn from(value: (String, BTreeMap<String, String>)) -> Self {
     IniSection { 
       name: value.0, 
       properties: value.1,
@@ -133,11 +127,11 @@ impl From<(String, IndexMap<String, String>)> for IniSection {
   }
 }
 
-impl Into<(String, IndexMap<String, String>)> for IniSection {
-  fn into(self) -> (String, IndexMap<String, String>) {
+impl From<IniSection> for (String, BTreeMap<String, String>) {
+  fn from(val: IniSection) -> Self {
     (
-      self.name,
-      self.properties,
+      val.name,
+      val.properties,
     )
   }
 }
@@ -185,11 +179,12 @@ impl IniProperty {
   }
 }
 
-impl ToString for IniProperty {
-  fn to_string(&self) -> String {
-    format!("{}:{}", self.key, self.value)
+impl Display for IniProperty {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      write!(f, "{}:{}", self.key, self.value)
   }
 }
+
 
 impl From<(String, String)> for IniProperty {
   fn from(value: (String, String)) -> Self {
@@ -209,8 +204,8 @@ impl From<(&str, &str)> for IniProperty {
   }
 }
 
-impl Into<(String, String)> for IniProperty {
-  fn into(self) -> (String, String) {
-    (self.key, self.value)
+impl From<IniProperty> for (String, String) {
+  fn from(val: IniProperty) -> Self {
+    (val.key, val.value)
   }
 }

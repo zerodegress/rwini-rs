@@ -23,12 +23,10 @@ impl RwiniTypePrice {
       } else {
         Err(RwiniTypePriceParseError::CutomValueInvalid)
       }
+    } else if let Ok(v) = text.parse::<i32>() {
+      Ok(Self::Credit(v))
     } else {
-      if let Ok(v) = text.parse::<i32>() {
-        Ok(Self::Credit(v))
-      } else {
-        Err(RwiniTypePriceParseError::CreditValueInvalid)
-      }
+      Err(RwiniTypePriceParseError::CreditValueInvalid)
     }
   }
 }
@@ -51,12 +49,10 @@ impl RwiniTypeSpeed {
       } else {
         Err(RwiniTypeSpeedParseError::SecondsValueInvalid)
       }
+    } else if let Ok(v) = text.parse::<f64>() {
+      Ok(Self::NormalizedPerTick(v))
     } else {
-      if let Ok(v) = text.parse::<f64>() {
-        Ok(Self::NormalizedPerTick(v))
-      } else {
-        Err(RwiniTypeSpeedParseError::NormalizedPerTickValueInvalid)
-      }
+      Err(RwiniTypeSpeedParseError::NormalizedPerTickValueInvalid)
     }
   }
 }

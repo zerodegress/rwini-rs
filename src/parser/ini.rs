@@ -89,75 +89,52 @@ impl IniParser {
           } else {
             property.set_value(property.value().to_owned() + line);
           }
-        } else {
-          if !trimmed_line.is_empty() && !trimmed_line.starts_with("#") {
-            if let Some((key, value)) = line.split_once(':') {
-              let trimmed_key = key.trim();
-              let trimmed_value = value.trim();
-              if trimmed_value.starts_with("\"\"\"") {
-                current_multiline = Some((
-                  "\"\"\"".to_owned(),
-                  Range {
-                    start: (
-                      row,
-                      key.chars().count() + 1 + 1 + value.find("\"\"\"").unwrap(),
-                    )
-                      .into(),
-                    end: (row, line.chars().count()).into(),
-                  },
-                  (
-                    trimmed_key.to_owned(),
-                    trimmed_value.strip_prefix("\"\"\"").unwrap().to_owned()
-                  ).into(),
-                ));
-              } else if trimmed_value.starts_with("'''") {
-                current_multiline = Some((
-                  "'''".to_owned(),
-                  Range {
-                    start: (
-                      row,
-                      key.chars().count() + 1 + 1 + value.find("'''").unwrap(),
-                    )
-                      .into(),
-                    end: (row, key.chars().count() + 1 + value.chars().count()).into(),
-                  },
-                  (
-                    trimmed_key.to_owned(),
-                    trimmed_value.strip_prefix("'''").unwrap().to_owned(),
-                  ).into(),
-                ));
-              } else {
-                if current_section
-                  .insert_property((
-                    trimmed_key.to_owned(),
-                    trimmed_value.to_owned(),
-                  ).into())
-                  .is_some()
-                  && self.error_if_repeated_key
-                {
-                  return Err(IniParseError {
-                    typ: IniParseErrorType::RepeatedKey,
-                    range: Range {
-                      start: (row, 1).into(),
-                      end: (row, line.chars().count()).into(),
-                    },
-                    msg: "".to_owned(),
-                  });
-                }
-              }
-            } else if trimmed_line.starts_with('[') && trimmed_line.ends_with(']') {
-              ini
-                .insert_section(current_section.clone());
-              *current_section = IniSection::new(trimmed_line
-                .strip_prefix("[")
-                .unwrap()
-                .strip_suffix("]")
-                .unwrap()
-                .to_owned()
-              );
-            } else if self.error_if_unknown_line_in_section {
+        } else if !trimmed_line.is_empty() && !trimmed_line.starts_with("#") {
+          if let Some((key, value)) = line.split_once(':') {
+            let trimmed_key = key.trim();
+            let trimmed_value = value.trim();
+            if trimmed_value.starts_with("\"\"\"") {
+              current_multiline = Some((
+                "\"\"\"".to_owned(),
+                Range {
+                  start: (
+                    row,
+                    key.chars().count() + 1 + 1 + value.find("\"\"\"").unwrap(),
+                  )
+                    .into(),
+                  end: (row, line.chars().count()).into(),
+                },
+                (
+                  trimmed_key.to_owned(),
+                  trimmed_value.strip_prefix("\"\"\"").unwrap().to_owned()
+                ).into(),
+              ));
+            } else if trimmed_value.starts_with("'''") {
+              current_multiline = Some((
+                "'''".to_owned(),
+                Range {
+                  start: (
+                    row,
+                    key.chars().count() + 1 + 1 + value.find("'''").unwrap(),
+                  )
+                    .into(),
+                  end: (row, key.chars().count() + 1 + value.chars().count()).into(),
+                },
+                (
+                  trimmed_key.to_owned(),
+                  trimmed_value.strip_prefix("'''").unwrap().to_owned(),
+                ).into(),
+              ));
+            } else if current_section
+              .insert_property((
+                trimmed_key.to_owned(),
+                trimmed_value.to_owned(),
+              ).into())
+              .is_some()
+              && self.error_if_repeated_key
+            {
               return Err(IniParseError {
-                typ: IniParseErrorType::UnknownLineInSection,
+                typ: IniParseErrorType::RepeatedKey,
                 range: Range {
                   start: (row, 1).into(),
                   end: (row, line.chars().count()).into(),
@@ -165,37 +142,56 @@ impl IniParser {
                 msg: "".to_owned(),
               });
             }
+          } else if trimmed_line.starts_with('[') && trimmed_line.ends_with(']') {
+            ini
+              .insert_section(current_section.clone());
+            *current_section = IniSection::new(trimmed_line
+              .strip_prefix("[")
+              .unwrap()
+              .strip_suffix("]")
+              .unwrap()
+              .to_owned()
+            );
+          } else if self.error_if_unknown_line_in_section {
+            return Err(IniParseError {
+              typ: IniParseErrorType::UnknownLineInSection,
+              range: Range {
+                start: (row, 1).into(),
+                end: (row, line.chars().count()).into(),
+              },
+              msg: "".to_owned(),
+            });
           }
         }
-      } else {
-        if trimmed_line.starts_with("[") && trimmed_line.ends_with("]") {
-          current_section = Some(IniSection::new(trimmed_line
-            .strip_prefix("[")
-            .unwrap()
-            .strip_suffix("]")
-            .unwrap()
-            .to_owned()));
-        } else if self.error_if_unknown_line_before_any_section
-          && !trimmed_line.is_empty()
-          && !trimmed_line.starts_with("#")
-        {
-          return Err(IniParseError {
-            typ: IniParseErrorType::UnknownLineBeforeAnySection,
-            range: Range {
-              start: (row, 1).into(),
-              end: (row, line.chars().count()).into(),
-            },
-            msg: "".to_owned(),
-          });
-        }
+      } else if trimmed_line.starts_with("[") && trimmed_line.ends_with("]") {
+        current_section = Some(IniSection::new(trimmed_line
+          .strip_prefix("[")
+          .unwrap()
+          .strip_suffix("]")
+          .unwrap()
+          .to_owned()));
+      } else if self.error_if_unknown_line_before_any_section
+        && !trimmed_line.is_empty()
+        && !trimmed_line.starts_with("#")
+      {
+        return Err(IniParseError {
+          typ: IniParseErrorType::UnknownLineBeforeAnySection,
+          range: Range {
+            start: (row, 1).into(),
+            end: (row, line.chars().count()).into(),
+          },
+          msg: "".to_owned(),
+        });
       }
     }
-    if self.error_if_endless_multiline && current_multiline.is_some() {
-      return Err(IniParseError {
-        typ: IniParseErrorType::EndlessMultiline,
-        range: current_multiline.unwrap().1,
-        msg: "".to_owned(),
-      });
+    if let Some((_, current_multiline_range, _)) = current_multiline {
+      if self.error_if_endless_multiline {
+        return Err(IniParseError {
+          typ: IniParseErrorType::EndlessMultiline,
+          range: current_multiline_range,
+          msg: "".to_owned(),
+        });
+      }
     }
     if let Some(current_section) = current_section {
       ini
