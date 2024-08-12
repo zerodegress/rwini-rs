@@ -13,6 +13,10 @@ mod test {
     assert_eq!(
       (Into::<Ini>::into([("core", [("name", "1"), ("key", "value"),]).into()])).to_string(),
       "[core]\nkey:value\nname:1"
-    )
+    );
+    assert_eq!(
+      (Into::<Ini>::into([("core", [("name", "1"), ("key", "value"),]).into()])).to_string(),
+      (Into::<Ini>::into([("core", [("name", "1"), ("key", "value"),]).into()])).to_string(),
+    );
   }
 }
